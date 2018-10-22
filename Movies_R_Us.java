@@ -23,7 +23,6 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManage
 	ResultSet resultSet;
 	ResultSetMetaData metaData;
 	int numberOfColumns;
-	final String URL = "jdbc:mysql://localhost:3306/sys?autoReconnect=true&useSSL=false";
 	
 	Movies_R_Us_Frame()
 	{
