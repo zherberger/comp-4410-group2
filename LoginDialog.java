@@ -6,7 +6,7 @@ import java.sql.*;
 public class LoginDialog extends JDialog implements ActionListener
 {
 	DatabaseManager dbm;
-	JTextField URLField;
+	//JTextField URLField;
 	JTextField loginField;
 	JPasswordField passField;
 	
@@ -23,11 +23,11 @@ public class LoginDialog extends JDialog implements ActionListener
 		JPanel mainPanel;
 		GroupLayout layout;
 		
-		URLField = new JTextField();
+		//URLField = new JTextField();
 		loginField = new JTextField();
 		passField = new JPasswordField();
 		
-		JLabel URLLabel = new JLabel("URL: ");
+		//JLabel URLLabel = new JLabel("URL: ");
 		JLabel loginLabel = new JLabel("Login: ");
 		JLabel passLabel = new JLabel ("Password: ");
 		
@@ -44,20 +44,15 @@ public class LoginDialog extends JDialog implements ActionListener
 		layout.setHorizontalGroup(
 			layout.createSequentialGroup()
 				.addGroup(layout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-					.addComponent(URLLabel)
 					.addComponent(loginLabel)
 					.addComponent(passLabel))
 				.addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-					.addComponent(URLField)
 					.addComponent(loginField)
 					.addComponent(passField))
 		);
 		
 		layout.setVerticalGroup(
 			layout.createSequentialGroup()
-				.addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-					.addComponent(URLLabel)
-					.addComponent(URLField))
 				.addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
 					.addComponent(loginLabel)
 					.addComponent(loginField))
@@ -78,10 +73,10 @@ public class LoginDialog extends JDialog implements ActionListener
 		tk = Toolkit.getDefaultToolkit();
 		d = tk.getScreenSize();
 		
-		setSize(d.width / 4, d.height / 8);
+		setSize(d.width / 4, d.height / 4);
 		setLocation(d.width / 4, d.height / 3);
 		
-		setTitle("Movies-R-Us");
+		setTitle("Log in to Movies-R-Us");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 		setVisible(true);
@@ -95,7 +90,7 @@ public class LoginDialog extends JDialog implements ActionListener
 		{	
 			try
 			{
-				dbm.makeConnection(URLField.getText().trim(), loginField.getText(), new String(passField.getPassword()));
+				dbm.makeConnection(loginField.getText(), new String(passField.getPassword()));
 				dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
 			}
 			

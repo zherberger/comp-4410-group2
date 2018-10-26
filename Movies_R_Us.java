@@ -23,6 +23,7 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManage
 	ResultSet resultSet;
 	ResultSetMetaData metaData;
 	int numberOfColumns;
+	final String URL = "jdbc:mysql://localhost:3306/movies_r_us?autoReconnect=true&useSSL=false";
 	
 	Movies_R_Us_Frame()
 	{
@@ -100,7 +101,7 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManage
 		Vector<Vector<Object>> data = new Vector<Vector<Object>>();
 		Vector<Object> vector;
 		
-		for(int i = 1; i < numberOfColumns; i++)
+		for(int i = 1; i <= numberOfColumns; i++)
 			columnNames.add(metaData.getColumnName(i));
 		
 		while(resultSet.next())
@@ -122,7 +123,7 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManage
 //---------------------DatabaseManager---------------------//
 //---------------------------------------------------------//
 	
-	public void makeConnection(String URL, String login, String pass) throws SQLException
+	public void makeConnection(String login, String pass) throws SQLException
 	{
 		try
 		{
