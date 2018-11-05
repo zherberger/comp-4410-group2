@@ -13,7 +13,7 @@ CREATE TABLE Members(
 email VARCHAR(50) PRIMARY KEY,
 name VARCHAR(50),
 login VARCHAR(30),
-phone INTEGER,
+phone LONG,
 is_admin INTEGER,
 street VARCHAR (50),
 zip INTEGER,
@@ -30,8 +30,8 @@ num_copies INTEGER NOT NULL CHECK (num_copies >=0));
 
 CREATE TABLE Rentals(
 rid INTEGER PRIMARY KEY,
-rent_date VARCHAR(30) NOT NULL,
-return_date VARCHAR(30) NOT NULL,
+rent_date LONG NOT NULL,
+return_date LONG NOT NULL,
 email VARCHAR(30),
 tid INTEGER,
 FOREIGN KEY (email) REFERENCES Members(email) ON DELETE CASCADE,
