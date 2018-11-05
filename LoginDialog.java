@@ -34,6 +34,7 @@ public class LoginDialog extends JDialog implements ActionListener
 		loginButton = new JButton("Login");
 		loginButton.addActionListener(this);
 		loginButton.setActionCommand("LOGIN");
+		getRootPane().setDefaultButton(loginButton);
 		
 		mainPanel = new JPanel();
 		layout = new GroupLayout(mainPanel);
@@ -82,6 +83,10 @@ public class LoginDialog extends JDialog implements ActionListener
 		setVisible(true);
 	}
 	
+//---------------------------------------------------------//
+//---------------------ActionListener----------------------//
+//---------------------------------------------------------//
+	
 	public void actionPerformed(ActionEvent e)
 	{
 		String command = e.getActionCommand();
@@ -90,13 +95,13 @@ public class LoginDialog extends JDialog implements ActionListener
 		{	
 			try
 			{
-				dbm.makeConnection(loginField.getText(), new String(passField.getPassword()));
+				dbm.login(loginField.getText().trim(), new String(passField.getPassword()));
 				dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
 			}
 			
 			catch(SQLException s)
 			{
-				JOptionPane.showMessageDialog(this, "Unable to form connection with database.", "Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this, s.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 			}
 		}
 	}
