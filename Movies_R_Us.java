@@ -41,7 +41,6 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManage
 	Statement statement;
 	ResultSet resultSet;
 	ResultSetMetaData metaData;
-	String queryString;
 	int numberOfColumns;
 	final String URL = "jdbc:mysql://falcon-cs.fairmontstate.edu:3306/DB12?useLegacyDatetimeCode=false&serverTimezone=America/New_York&autoReconnect=true&useSSL=false";
 	final String login = "dbgroup2";
@@ -57,6 +56,7 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManage
 		JPanel searchPanel;
 		JPanel buttonPanel;
 		JScrollPane outputScrollPane;
+		JButton rentButton;
 		JButton viewSequelsButton;
 		JButton rentalHistoryButton;
 		
@@ -78,12 +78,14 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManage
 		addGameButton = newButton("Add Game", "ADD_GAME", this, false);
 		recentRentalsButton = newButton("View Recent Rentals", "RECENT_RENTALS", this, false);
 		popularTitlesButton = newButton("View Popular Titles", "POPULAR_TITLES", this, false);
+		rentButton = newButton("Rent Title", "RENT", this, true);
 		viewSequelsButton = newButton("View Sequels", "VIEW_SEQUELS", this, true);
 		rentalHistoryButton = newButton("View Rental History", "RENTAL_HISTORY", this, true);
 		buttonPanel.add(addMovieButton);
 		buttonPanel.add(addGameButton);
 		buttonPanel.add(recentRentalsButton);
 		buttonPanel.add(popularTitlesButton);
+		buttonPanel.add(rentButton);
 		buttonPanel.add(viewSequelsButton);
 		buttonPanel.add(rentalHistoryButton);
 		add(buttonPanel, BorderLayout.SOUTH);
@@ -310,6 +312,20 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManage
 				s.printStackTrace();
 			}
 		}
+		
+		else if(command.equals("RENT"))
+		{
+			try
+			{
+				rent();
+			}
+			
+			catch(SQLException s)
+			{
+				JOptionPane.showMessageDialog(this, s.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+				s.printStackTrace();
+			}
+		}
 	}
 	
 	void search() throws SQLException
@@ -337,7 +353,7 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManage
 						 + "WHERE R.tid = T.tid AND R.email = '" + email + "') ";
 			}
 			
-			pStatement = connection.prepareStatement("SELECT DISTINCT T.tid AS 'Title ID', T.title AS 'Title', T.release_date AS 'Release Date', T.genre AS 'Genre', S1.name AS 'Director' "
+			pStatement = connection.prepareStatement("SELECT DISTINCT T.tid AS 'Title ID', T.title AS 'Title', T.release_date AS 'Release Date', T.genre AS 'Genre', S1.name AS 'Director', T.num_copies AS '# Copies' "
 					   + "FROM Titles T, Movies M, Directors D, Stars S1, Stars S2, Stars_In SI, Actors A "
 					   + "WHERE M.movie_id = T.tid "
 					   + "AND M.director_id = D.director_id "
@@ -361,7 +377,7 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManage
 		
 		else
 		{
-			pStatement = connection.prepareStatement("SELECT T.tid AS 'Title ID', T.title AS 'Title', T.release_date AS 'Release Date', T.genre AS 'Genre', G.platform AS 'Platform' "
+			pStatement = connection.prepareStatement("SELECT T.tid AS 'Title ID', T.title AS 'Title', T.release_date AS 'Release Date', T.genre AS 'Genre', G.platform AS 'Platform', T.num_copies AS '# Copies' "
 					   + "FROM Games G, Titles T "
 					   + "WHERE G.game_id = T.tid "
 					   + "AND T.title LIKE ? "
@@ -409,8 +425,36 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManage
 	void popularTitles() throws SQLException
 	{
 		PreparedStatement pStatement;
-		pStatement = connection.prepareStatement("SELECT T.tid AS 'Title ID', T.title AS 'Title', T.release_date AS 'Release Date', T.genre AS 'Genre' "
-										   + "FROM Titles T, Rentals R ");
+	}
+	
+	void rent() throws SQLException
+	{
+		PreparedStatement pStatement;
+		int maxRid;
+		long now;
+		
+		resultSet = statement.executeQuery("SELECT MAX(rid) "
+									  + "FROM Rentals ");
+		resultSet.next();
+		
+		if(resultSet.getObject(1) != null)
+		{
+			maxRid = Integer.parseInt(resultSet.getObject(1).toString());
+			maxRid++;
+		}
+		
+		else maxRid = 0;
+		now = System.currentTimeMillis();
+		
+		pStatement = connection.prepareStatement("INSERT INTO Rentals "
+										   + "VALUES(?,?,?,?,?) ");
+		pStatement.setInt(1, maxRid);
+		pStatement.setLong(2, now);
+		pStatement.setLong(3, now + 86400000); //number of milliseconds in a week
+		pStatement.setString(4, email);
+		pStatement.setInt(5, (Integer) (resultTable.getValueAt(resultTable.getSelectedRow(), 0))); //the title ID
+		
+		pStatement.executeUpdate();
 	}
 	
 	void buildTableModel(PreparedStatement pStatement) throws SQLException
@@ -555,9 +599,9 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManage
 		pStatement.setInt(2, directorId);
 		pStatement.executeUpdate();
 		
-		for(String actor : cast)
+		for(String str : cast)
 		{
-			actor.trim();
+			String actor = str.trim();
 			pStatement = connection.prepareStatement("SELECT A.actor_id "
 									+ "FROM Stars S, Actors A "
 									+ "WHERE S.sid = A.actor_id AND S.name = ? ");
