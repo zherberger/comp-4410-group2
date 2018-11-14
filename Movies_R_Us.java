@@ -1,5 +1,6 @@
 import javax.swing.*;
 import javax.swing.table.*;
+import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
@@ -15,7 +16,7 @@ public class Movies_R_Us
 	}
 }
 
-class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManager
+class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionListener, DatabaseManager
 {
 	JTextField searchField;
 	JButton searchButton;
@@ -23,6 +24,9 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManage
 	JButton addGameButton;
 	JButton recentRentalsButton;
 	JButton popularTitlesButton;
+	JButton rentButton;
+	JButton viewSequelsButton;
+	JButton rentalHistoryButton;
 	JTable resultTable;
 	JRadioButton moviesButton;
 	JRadioButton gamesButton;
@@ -56,9 +60,6 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManage
 		JPanel searchPanel;
 		JPanel buttonPanel;
 		JScrollPane outputScrollPane;
-		JButton rentButton;
-		JButton viewSequelsButton;
-		JButton rentalHistoryButton;
 		
 		topPanel = new JPanel(new BorderLayout());
 		
@@ -78,9 +79,9 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManage
 		addGameButton = newButton("Add Game", "ADD_GAME", this, false);
 		recentRentalsButton = newButton("View Recent Rentals", "RECENT_RENTALS", this, false);
 		popularTitlesButton = newButton("View Popular Titles", "POPULAR_TITLES", this, false);
-		rentButton = newButton("Rent Title", "RENT", this, true);
-		viewSequelsButton = newButton("View Sequels", "VIEW_SEQUELS", this, true);
-		rentalHistoryButton = newButton("View Rental History", "RENTAL_HISTORY", this, true);
+		rentButton = newButton("Rent Title", "RENT", this, false);
+		viewSequelsButton = newButton("View Sequels", "VIEW_SEQUELS", this, false);
+		rentalHistoryButton = newButton("View Rental History", "RENTAL_HISTORY", this, false);
 		buttonPanel.add(addMovieButton);
 		buttonPanel.add(addGameButton);
 		buttonPanel.add(recentRentalsButton);
@@ -91,6 +92,7 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManage
 		add(buttonPanel, BorderLayout.SOUTH);
 		
 		resultTable = new JTable();
+		resultTable.getSelectionModel().addListSelectionListener(this);
 		outputScrollPane = new JScrollPane(resultTable);
 		add(outputScrollPane, BorderLayout.CENTER);
 		add(topPanel, BorderLayout.NORTH);
@@ -447,12 +449,13 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManage
 		now = System.currentTimeMillis();
 		
 		pStatement = connection.prepareStatement("INSERT INTO Rentals "
-										   + "VALUES(?,?,?,?,?) ");
+										   + "VALUES(?,?,?,?,?,?) ");
 		pStatement.setInt(1, maxRid);
-		pStatement.setLong(2, now);
-		pStatement.setLong(3, now + 86400000); //number of milliseconds in a week
-		pStatement.setString(4, email);
-		pStatement.setInt(5, (Integer) (resultTable.getValueAt(resultTable.getSelectedRow(), 0))); //the title ID
+		pStatement.setInt(2, (Integer) (resultTable.getValueAt(resultTable.getSelectedRow(), 0))); //the title ID
+		pStatement.setString(3, email);
+		pStatement.setString(4, sdf.format(new Date(now)));
+		pStatement.setString(5, sdf.format(new Date(now + 604800000)));
+		pStatement.setLong(6, now);
 		
 		pStatement.executeUpdate();
 	}
@@ -484,6 +487,16 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManage
 	}
 
 //---------------------------------------------------------//
+//------------------ListSelectionListener------------------//
+//---------------------------------------------------------//
+
+	public void valueChanged(ListSelectionEvent e)
+	{
+		rentButton.setEnabled(resultTable.getSelectedRowCount() == 1);
+		viewSequelsButton.setEnabled(resultTable.getSelectedRowCount() == 1);
+	}
+
+//---------------------------------------------------------//
 //---------------------DatabaseManager---------------------//
 //---------------------------------------------------------//
 	
@@ -512,6 +525,8 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, DatabaseManage
 					recentRentalsButton.setEnabled(true);
 					popularTitlesButton.setEnabled(true);
 				}
+				
+				rentalHistoryButton.setEnabled(true);
 			}
 		}
 		
