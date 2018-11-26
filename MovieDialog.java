@@ -1,7 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.sql.*;
+import java.sql.SQLException;
 import java.text.*;
 
 public class MovieDialog extends JDialog implements ActionListener
@@ -17,6 +17,12 @@ public class MovieDialog extends JDialog implements ActionListener
 	JTextField numCopiesField;
 	JTextField[] fields;
 	final SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
+	static final String[] GENRES = {"", "Action", "Adventure", "Animation", "Biopic",
+								   "Childrens", "Comedy", "Crime", "Documentary",
+								   "Drama", "Experimental", "Family", "Fantasy",
+								   "Historical", "Horror", "Musical", "Romance",
+								   "Sports", "Science Fiction", "Thriller", "War",
+								   "Western", "Other"};
 	
 	MovieDialog(DatabaseManager dbm)
 	{
@@ -44,7 +50,7 @@ public class MovieDialog extends JDialog implements ActionListener
 		releaseDateField.setInputVerifier(new DateVerifier());
 		directorField = new JTextField();
 		castField = new JTextField();
-		genreBox = new JComboBox<String>(Movie.GENRES);
+		genreBox = new JComboBox<String>(GENRES);
 		sequelCheckBox = new JCheckBox("Sequel ");
 		sequelComboBox = new JComboBox<String>();
 		numCopiesField = new JTextField();
@@ -162,6 +168,9 @@ public class MovieDialog extends JDialog implements ActionListener
 				if(field.getText().trim().equals(""))
 					isValid = false;
 			}
+			
+			if(genreBox.getSelectedItem() == "")
+				isValid = false;
 		
 			if(!isValid)
 				JOptionPane.showMessageDialog(this, "One or more fields were left blank.", "Could not add/edit assignment", JOptionPane.ERROR_MESSAGE);

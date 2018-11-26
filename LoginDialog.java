@@ -1,7 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.sql.*;
+import java.sql.SQLException;
 
 public class LoginDialog extends JDialog implements ActionListener
 {
