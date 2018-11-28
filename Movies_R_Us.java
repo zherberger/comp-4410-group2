@@ -787,6 +787,34 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 	
 	public void addGame(String title, String releaseDate, String platform, int version, String genre, int numCopies) throws SQLException
 	{
+		PreparedStatement pStatement;
+		int maxTid;
+		
+		resultSet = statement.executeQuery("SELECT MAX(tid) FROM Titles");
+		resultSet.next();
+		
+		if(resultSet.getObject(1) != null)
+		{
+			maxTid = Integer.parseInt(resultSet.getObject(1).toString());
+			maxTid++;
+		}
+		
+		else maxTid = 0; //got no movies in the database? no problem
+		pStatement = connection.prepareStatement("INSERT INTO Titles "
+										   + "VALUES(?,?,?,?,?) ");
+		pStatement.setInt(1, maxTid);
+		pStatement.setString(2, title);
+		pStatement.setString(3, releaseDate);
+		pStatement.setString(4, genre);
+		pStatement.setInt(5, numCopies);
+		pStatement.executeUpdate();
+
+		pStatement = connection.prepareStatement("INSERT INTO Games "
+										   + "VALUES(?,?,?) ");
+		pStatement.setInt(1, maxTid);
+		pStatement.setString(2, platform);
+		pStatement.setString(3, version);
+		pStatement.executeUpdate();
 	}
 	
 	public void addMember(String email, String name, String password, long phone, String street, String city, String state, int zip, String plan) throws SQLException
