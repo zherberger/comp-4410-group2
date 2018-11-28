@@ -52,7 +52,10 @@ public class MovieDialog extends JDialog implements ActionListener
 		castField = new JTextField();
 		genreBox = new JComboBox<String>(GENRES);
 		sequelCheckBox = new JCheckBox("Sequel ");
-		sequelComboBox = new JComboBox<String>();
+		sequelCheckBox.addActionListener(this);
+		sequelCheckBox.setActionCommand("SEQUEL");
+		sequelComboBox = new JComboBox<String>(dbm.getMovies());
+		sequelComboBox.setEnabled(false);
 		numCopiesField = new JTextField();
 		numCopiesField.setInputVerifier(new NumCopiesVerifier());
 		
@@ -119,6 +122,7 @@ public class MovieDialog extends JDialog implements ActionListener
 		
 		add(mainPanel, BorderLayout.CENTER);
 		add(buttonPanel, BorderLayout.SOUTH);
+		pack();
 	}
 	
 	JButton newButton(String label, String actionCommand, ActionListener buttonListener, boolean startsEnabled)
@@ -141,7 +145,6 @@ public class MovieDialog extends JDialog implements ActionListener
 		tk = Toolkit.getDefaultToolkit();
 		d = tk.getScreenSize();
 		
-		setSize(d.width / 4, d.height / 3);
 		setLocation(d.width / 4, d.height / 3);
 		
 		setTitle("Add Movie");
@@ -160,7 +163,7 @@ public class MovieDialog extends JDialog implements ActionListener
 		
 		if(command.equals("ADD"))
 		{
-			String[] cast;
+			int sequelID = -1;
 			boolean isValid = true;
 		
 			for(JTextField field : fields)
@@ -174,7 +177,10 @@ public class MovieDialog extends JDialog implements ActionListener
 		
 			if(!isValid)
 				JOptionPane.showMessageDialog(this, "One or more fields were left blank.", "Could not add/edit assignment", JOptionPane.ERROR_MESSAGE);
-		
+			
+			if(sequelCheckBox.isSelected())
+				sequelID = Integer.parseInt(((String) sequelComboBox.getSelectedItem()).split(" ")[0].trim());
+			
 			else
 			{
 				try
@@ -184,7 +190,8 @@ public class MovieDialog extends JDialog implements ActionListener
 								directorField.getText().trim(),
 								castField.getText().trim().split(","),
 								(String) genreBox.getSelectedItem(),
-								Integer.parseInt(numCopiesField.getText().trim()));
+								Integer.parseInt(numCopiesField.getText().trim()),
+								sequelID);
 				}
 				
 				catch(SQLException s)
@@ -201,6 +208,11 @@ public class MovieDialog extends JDialog implements ActionListener
 		else if(command.equals("CANCEL"))
 		{
 			dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+		}
+		
+		else if(command.equals("SEQUEL"))
+		{
+			sequelComboBox.setEnabled(sequelCheckBox.isSelected());
 		}
 	}
 }
