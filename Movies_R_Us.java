@@ -27,12 +27,23 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 	JButton rentButton;
 	JButton viewSequelsButton;
 	JButton rentalHistoryButton;
+	JButton newMemberButton;
+	JButton editMemberButton;
+	JButton currentRentalsButton;
+	JButton viewMembersButton;
+	JButton markReturnedButton;
+	JButton deleteButton;
+	JButton logoutButton;
 	JTable resultTable;
 	JRadioButton moviesButton;
 	JRadioButton gamesButton;
 	ButtonGroup titleTypes;
+	boolean titlesDisplayed;
+	boolean membersDisplayed;
+	boolean rentalsDisplayed;
 	
 	JPanel mainPanel;
+	JPanel buttonPanel;
 	JTextField actorsField;
 	JTextField directorsField;
 	JComboBox<String> movieGenreBox;
@@ -58,7 +69,6 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 	{
 		JPanel topPanel;
 		JPanel searchPanel;
-		JPanel buttonPanel;
 		JScrollPane outputScrollPane;
 		
 		topPanel = new JPanel(new BorderLayout());
@@ -74,22 +84,20 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 		setupSearchOptions();
 		topPanel.add(mainPanel, BorderLayout.CENTER);
 		
-		buttonPanel = new JPanel();
-		addMovieButton = newButton("Add Movie", "ADD_MOVIE", this, false);
-		addGameButton = newButton("Add Game", "ADD_GAME", this, false);
-		recentRentalsButton = newButton("View Recent Rentals", "RECENT_RENTALS", this, false);
-		popularTitlesButton = newButton("View Popular Titles", "POPULAR_TITLES", this, false);
+		addMovieButton = newButton("Add Movie", "ADD_MOVIE", this, true);
+		addGameButton = newButton("Add Game", "ADD_GAME", this, true);
+		recentRentalsButton = newButton("View Recent Rentals", "RECENT_RENTALS", this, true);
+		popularTitlesButton = newButton("View Popular Titles", "POPULAR_TITLES", this, true);
 		rentButton = newButton("Rent Title", "RENT", this, false);
 		viewSequelsButton = newButton("View Sequels", "VIEW_SEQUELS", this, false);
-		rentalHistoryButton = newButton("View Rental History", "RENTAL_HISTORY", this, false);
-		buttonPanel.add(addMovieButton);
-		buttonPanel.add(addGameButton);
-		buttonPanel.add(recentRentalsButton);
-		buttonPanel.add(popularTitlesButton);
-		buttonPanel.add(rentButton);
-		buttonPanel.add(viewSequelsButton);
-		buttonPanel.add(rentalHistoryButton);
-		add(buttonPanel, BorderLayout.SOUTH);
+		rentalHistoryButton = newButton("View Rental History", "RENTAL_HISTORY", this, true);
+		newMemberButton = newButton("Add Member", "ADD_MEMBER", this, true);
+		editMemberButton = newButton("Edit Member Info", "EDIT_MEMBER", this, true);
+		currentRentalsButton = newButton("Currently Rented Items", "CURRENT_RENTALS", this, true);
+		viewMembersButton = newButton("View Members", "VIEW_MEMBERS", this, true);
+		markReturnedButton = newButton("Mark Returned", "RETURN", this, false);
+		deleteButton = newButton("Delete", "DELETE", this, false);
+		logoutButton = newButton("Log Out", "LOGOUT", this, true);
 		
 		resultTable = new JTable();
 		resultTable.getSelectionModel().addListSelectionListener(this);
@@ -97,9 +105,10 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 		add(outputScrollPane, BorderLayout.CENTER);
 		add(topPanel, BorderLayout.NORTH);
 		
-		setupMainFrame();
 		makeConnection();
 		new LoginDialog(this);
+		setupMainFrame();
+		searchButton.doClick();
 	}
 	
 	JButton newButton(String label, String actionCommand, ActionListener buttonListener, boolean startsEnabled)
@@ -268,68 +277,109 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 	{
 		String command = e.getActionCommand();
 		
-		if(command.equals("SEARCH"))
-		{
-			try
-			{
-				search();
-			}
-			
-			catch(SQLException s)
-			{
-				JOptionPane.showMessageDialog(this, s.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-				s.printStackTrace();
-			}
-		}
-		
-		else if(command.equals("ADD_MOVIE"))
+		if(command.equals("ADD_MOVIE"))
 		{
 			new MovieDialog(this);
 		}
-		else if(command.equals("ADD_GAME")) {
-			new GameDialog(this);
+		
+		else if(command.equals("ADD_MEMBER"))
+		{
+			new MemberDialog(this);
 		}
 		
-		else if(command.equals("VIEW_SEQUELS"))
+		else if(command.equals("EDIT_MEMBER"))
 		{
+			PreparedStatement pStatement;
+			ResultSet addressResultSet;
+			
 			try
 			{
+				pStatement = connection.prepareStatement("SELECT * FROM Members "
+												   + "WHERE email = ? ");
+				pStatement.setString(1, email);
+				resultSet = pStatement.executeQuery();
+				resultSet.next();
+				
+				pStatement = connection.prepareStatement("SELECT A.city, A.state "
+												   + "FROM Addresses A, Members M "
+												   + "WHERE M.email = ? "
+												   + "AND M.street = A.street "
+												   + "AND M.zip = A.zip ");
+				pStatement.setString(1, email);
+				addressResultSet = pStatement.executeQuery();
+				addressResultSet.next();
+				
+				new MemberDialog(this,
+								email,
+								resultSet.getObject(2).toString(),
+								resultSet.getObject(3).toString(),
+								Long.parseLong(resultSet.getObject(4).toString()),
+								resultSet.getObject(6).toString(),
+								addressResultSet.getObject(1).toString(),
+								addressResultSet.getObject(2).toString(),
+								Integer.parseInt(resultSet.getObject(7).toString()),
+								resultSet.getObject(8).toString());
+			}
+			
+			catch(SQLException s)
+			{
+				JOptionPane.showMessageDialog(this, s.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			}
+		}
+		
+		else try
+		{
+			if(command.equals("SEARCH"))
+			{
+				search();
+				titlesDisplayed = true;
+			}
+			
+			else titlesDisplayed = false;
+		
+			if(command.equals("VIEW_SEQUELS"))
 				viewSequels();
-			}
-			
-			catch(SQLException s)
-			{
-				JOptionPane.showMessageDialog(this, s.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-				s.printStackTrace();
-			}
-		}
 		
-		else if(command.equals("RENTAL_HISTORY"))
-		{
-			try
-			{
+			else if(command.equals("RENTAL_HISTORY"))
 				rentalHistory();
+		
+			else if(command.equals("RENT"))
+				rent();
+		
+			else if(command.equals("RECENT_RENTALS"))
+				recentRentals();
+		
+			else if(command.equals("POPULAR_TITLES"))
+				popularTitles();
+			
+			else if(command.equals("CURRENT_RENTALS"))
+			{
+				currentRentals();
+				rentalsDisplayed = true;
 			}
 			
-			catch(SQLException s)
+			else rentalsDisplayed = false;
+			
+			if(command.equals("VIEW_MEMBERS"))
 			{
-				JOptionPane.showMessageDialog(this, s.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-				s.printStackTrace();
+				viewMembers();
+				membersDisplayed = true;
+			}
+			
+			else membersDisplayed = false;
+			
+			if(command.equals("LOGOUT"))
+			{
+				connection.close();
+				resultSet.close();
+				System.exit(0);
 			}
 		}
 		
-		else if(command.equals("RENT"))
+		catch(SQLException s)
 		{
-			try
-			{
-				rent();
-			}
-			
-			catch(SQLException s)
-			{
-				JOptionPane.showMessageDialog(this, s.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-				s.printStackTrace();
-			}
+			JOptionPane.showMessageDialog(this, s.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			s.printStackTrace();
 		}
 	}
 	
@@ -422,14 +472,31 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 		buildTableModel(pStatement);
 	}
 	
-	void recentTitles() throws SQLException
+	void recentRentals() throws SQLException
 	{
 		PreparedStatement pStatement;
+		pStatement = connection.prepareStatement("SELECT T.tid AS 'Title ID', T.title AS 'Title', M.email AS 'Member e-mail', A.street AS 'Shipping Address', A.city AS 'City', A.state AS 'State', A.zip AS 'Zip' "
+										   + "FROM Titles T, Members M, Addresses A, Rentals R "
+										   + "WHERE T.tid = R.tid "
+										   + "AND R.email = M.email "
+										   + "AND M.street = A.street "
+										   + "AND M.zip = A.zip "
+										   + "AND R.timestamp > ?");
+										   
+		pStatement.setLong(1, System.currentTimeMillis() - 604800000L); //number of milliseconds in a week
+		buildTableModel(pStatement);
 	}
 	
 	void popularTitles() throws SQLException
 	{
 		PreparedStatement pStatement;
+		pStatement = connection.prepareStatement("SELECT T.tid AS 'Title ID', T.title AS 'Title', T.release_date AS 'Release Date', T.genre AS 'Genre', COUNT(R.rid) AS 'Rental Count' "
+										   + "FROM Titles T, Rentals R "
+										   + "WHERE T.tid = R.tid "
+										   + "GROUP BY T.tid "
+										   + "ORDER BY 'Rental Count' DESC ");
+										   
+		buildTableModel(pStatement);
 	}
 	
 	void rent() throws SQLException
@@ -452,7 +519,7 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 		now = System.currentTimeMillis();
 		
 		pStatement = connection.prepareStatement("INSERT INTO Rentals "
-										   + "VALUES(?,?,?,?,?,?) ");
+										   + "VALUES(?,?,?,?,?,?,0) ");
 		pStatement.setInt(1, maxRid);
 		pStatement.setInt(2, (Integer) (resultTable.getValueAt(resultTable.getSelectedRow(), 0))); //the title ID
 		pStatement.setString(3, email);
@@ -461,6 +528,29 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 		pStatement.setLong(6, now);
 		
 		pStatement.executeUpdate();
+	}
+	
+	void currentRentals() throws SQLException
+	{
+		PreparedStatement pStatement;
+		pStatement = connection.prepareStatement("SELECT T.tid AS 'Title ID', T.title AS 'Title', M.email AS 'Member e-mail', A.street AS 'Shipping Address', A.city AS 'City', A.state AS 'State', A.zip AS 'Zip' "
+									+ "FROM Titles T, Members M, Addresses A, Rentals R "
+									+ "WHERE T.tid = R.tid "
+									+ "AND R.email = M.email "
+									+ "AND M.street = A.street "
+									+ "AND M.zip = A.zip "
+									+ "AND R.returned = 0 ");
+									
+		buildTableModel(pStatement);
+	}
+	
+	void viewMembers() throws SQLException
+	{
+		PreparedStatement pStatement;
+		pStatement = connection.prepareStatement("SELECT email AS 'E-mail', name AS 'Name', login AS 'Password', phone AS 'Phone #', street AS 'Street Address', zip AS 'Zip', pname AS 'Plan' "
+										   + "FROM Members ");
+										   
+		buildTableModel(pStatement);
 	}
 	
 	void buildTableModel(PreparedStatement pStatement) throws SQLException
@@ -495,10 +585,14 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 
 	public void valueChanged(ListSelectionEvent e)
 	{
-		rentButton.setEnabled(resultTable.getSelectedRowCount() == 1);
-		viewSequelsButton.setEnabled(resultTable.getSelectedRowCount() == 1);
+		int selectedRows = resultTable.getSelectedRowCount();
+		
+		rentButton.setEnabled(selectedRows == 1);
+		viewSequelsButton.setEnabled(selectedRows == 1);
+		markReturnedButton.setEnabled(rentalsDisplayed && selectedRows == 1);
+		deleteButton.setEnabled((membersDisplayed || titlesDisplayed) && selectedRows == 1);
 	}
-
+	
 //---------------------------------------------------------//
 //---------------------DatabaseManager---------------------//
 //---------------------------------------------------------//
@@ -521,15 +615,32 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 			{
 				email = username;
 				
-				if(resultSet.getObject(3).equals(1))
+				if(resultSet.getObject(3).equals(1)) //if user is admin
 				{
-					addMovieButton.setEnabled(true);
-					addGameButton.setEnabled(true);
-					recentRentalsButton.setEnabled(true);
-					popularTitlesButton.setEnabled(true);
+					buttonPanel = new JPanel(new GridLayout(2, 5));
+					buttonPanel.add(addMovieButton);
+					buttonPanel.add(addGameButton);
+					buttonPanel.add(newMemberButton);
+					buttonPanel.add(recentRentalsButton);
+					buttonPanel.add(popularTitlesButton);
+					buttonPanel.add(currentRentalsButton);
+					buttonPanel.add(viewMembersButton);
+					buttonPanel.add(markReturnedButton);
+					buttonPanel.add(deleteButton);
+					buttonPanel.add(logoutButton);
 				}
 				
-				rentalHistoryButton.setEnabled(true);
+				else
+				{
+					buttonPanel = new JPanel(new GridLayout(1, 5));
+					buttonPanel.add(rentButton);
+					buttonPanel.add(viewSequelsButton);
+					buttonPanel.add(rentalHistoryButton);
+					buttonPanel.add(editMemberButton);
+					buttonPanel.add(logoutButton);
+				}
+				
+				add(buttonPanel, BorderLayout.SOUTH);
 			}
 		}
 		
@@ -537,9 +648,12 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 		{
 			throw new SQLException("Username or password is incorrect.");
 		}
+		
+		if(email == null)
+			System.exit(0);
 	}
 	
-	public void addMovie(String title, String releaseDate, String director, String[] cast, String genre, int numCopies) throws SQLException
+	public void addMovie(String title, String releaseDate, String director, String[] cast, String genre, int numCopies, int sequelID) throws SQLException
 	{
 		PreparedStatement pStatement;
 		int maxTid;
@@ -671,6 +785,121 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 		}
 	} //this method is a goddamn mess. Come back later
 	
+	public void addGame(String title, String releaseDate, String platform, int version, String genre, int numCopies) throws SQLException
+	{
+	}
+	
+	public void addMember(String email, String name, String password, long phone, String street, String city, String state, int zip, String plan) throws SQLException
+	{
+		PreparedStatement pStatement;
+		
+		pStatement = connection.prepareStatement("SELECT M.email "
+										   + "FROM Members M "
+										   + "WHERE M.email = ? ");
+		pStatement.setString(1, email);
+		resultSet = pStatement.executeQuery();
+		
+		if(resultSet.next())
+			throw new SQLException("User already exists with this email.");
+		
+		checkAddress(street, city, state, zip);
+		
+		pStatement = connection.prepareStatement("INSERT INTO Members "
+										   + "VALUES(?,?,?,?,0,?,?,?) "); //can an admin add another admin? For now, I'm saying NO
+										   
+		pStatement.setString(1, email);
+		pStatement.setString(2, name);
+		pStatement.setString(3, password);
+		pStatement.setLong(4, phone);
+		pStatement.setString(5, street);
+		pStatement.setInt(6, zip);
+		pStatement.setString(7, plan);
+		
+		pStatement.executeUpdate();
+	}
+	
+	public void updateMember(String email, String name, String password, long phone, String street, String city, String state, int zip, String plan) throws SQLException
+	{
+		PreparedStatement pStatement;
+		
+		checkAddress(street, city, state, zip);
+		
+		pStatement = connection.prepareStatement("UPDATE Members "
+										   + "SET name = ?, "
+										   + "login = ?, "
+										   + "phone = ?, "
+										   + "street = ?, "
+										   + "zip = ?, "
+										   + "pname = ? "
+										   + "WHERE email = ? ");
+										   
+		pStatement.setString(1, name);
+		pStatement.setString(2, password);
+		pStatement.setLong(3, phone);
+		pStatement.setString(4, street);
+		pStatement.setInt(5, zip);
+		pStatement.setString(6, plan);
+		pStatement.setString(7, email);
+		
+		pStatement.executeUpdate();
+	}
+	
+	public void checkAddress(String street, String city, String state, int zip) throws SQLException
+	{
+		PreparedStatement pStatement;
+		
+		pStatement = connection.prepareStatement("SELECT A.street, A.zip "
+										   + "FROM Addresses A "
+										   + "WHERE A.street = ? "
+										   + "AND A.zip = ? ");
+										   
+		pStatement.setString(1, street);
+		pStatement.setInt(2, zip);
+		resultSet = pStatement.executeQuery();
+		
+		if(!resultSet.next()) //if address not already in database
+		{
+			pStatement = connection.prepareStatement("INSERT INTO Addresses "
+											    + "VALUES(?,?,?,?) ");
+												
+			pStatement.setString(1, street);
+			pStatement.setString(2, city);
+			pStatement.setString(3, state);
+			pStatement.setInt(4, zip);
+			
+			pStatement.executeUpdate();
+		}
+	}
+	
+	public Vector<String> getMovies()
+	{
+		PreparedStatement pStatement;
+		Vector<String> movies = new Vector<String>();
+		
+		try
+		{
+			pStatement = connection.prepareStatement("SELECT T.tid, T.title "
+										   + "FROM Titles T, Movies M "
+										   + "WHERE T.tid = M.movie_id ");
+			resultSet = pStatement.executeQuery();
+			
+			while(resultSet.next())
+			movies.add(String.format("%-5s%-20s", resultSet.getObject(1).toString(), resultSet.getObject(2).toString()));
+		}
+		
+		catch(SQLException e)
+		{
+			System.out.println("Could not GET MOVIES.");
+		}
+		
+		return movies;
+	}
+	
+	public String[] getPlans()
+	{
+		return new String[]{"None", "Standard", "Silver", "Gold", "Platinum"};
+	}
+	
 	void addStar(int sid, String name) throws SQLException
 	{
 		PreparedStatement pStatement;
@@ -689,38 +918,5 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 	void addActor(int actorId) throws SQLException
 	{
 		statement.executeUpdate("INSERT INTO Actors VALUES(" + actorId + ") ");
-	}
-	
-	public void addGame(String title, String releaseDate, String platform, String version, String genre, int numCopies) throws SQLException
-	{
-		PreparedStatement pStatement;
-		int maxTid;
-		
-		resultSet = statement.executeQuery("SELECT MAX(tid) FROM Titles");
-		resultSet.next();
-		
-		if(resultSet.getObject(1) != null)
-		{
-			maxTid = Integer.parseInt(resultSet.getObject(1).toString());
-			maxTid++;
-		}
-		
-		else maxTid = 0; //got no movies in the database? no problem
-		pStatement = connection.prepareStatement("INSERT INTO Titles "
-			    + "VALUES(?,?,?,?,?) ");
-		pStatement.setInt(1, maxTid);
-		pStatement.setString(2, title);
-		pStatement.setString(3, releaseDate);
-		pStatement.setString(4, genre);
-		pStatement.setInt(5, numCopies);
-		pStatement.executeUpdate();
-
-		pStatement = connection.prepareStatement("INSERT INTO Games "
-					+ "VALUES(?,?,?) ");
-		pStatement.setInt(1, maxTid);
-		pStatement.setString(2, platform);
-		pStatement.setString(3, version);
-		pStatement.executeUpdate();
-		
 	}
 }

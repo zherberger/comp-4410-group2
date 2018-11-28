@@ -155,10 +155,14 @@ public class MemberDialog extends JDialog implements ActionListener
 		
 		buttonPanel = new JPanel();
 		
-		if(email == null)
+		if(email == null) //if we're adding a member
 			buttonPanel.add(newButton("Add Member", "ADD", this, true));
 		
-		else buttonPanel.add(newButton("Save Member Info", "UPDATE", this, true));
+		else //otherwise, a member is editing their info
+		{
+			buttonPanel.add(newButton("Save Member Info", "UPDATE", this, true));
+			emailField.setEditable(false); //we can't have members changing their emails willy-nilly
+		}
 
 		buttonPanel.add(newButton("Reset Values", "RESET", this, true));
 		buttonPanel.add(newButton("Cancel", "CANCEL", this, true));
@@ -195,6 +199,14 @@ public class MemberDialog extends JDialog implements ActionListener
 	
 	void setupDialog()
 	{
+		Toolkit tk;
+		Dimension d;
+		
+		tk = Toolkit.getDefaultToolkit();
+		d = tk.getScreenSize();
+		
+		setLocation(d.width / 4, d.height / 3);
+		
 		pack();
 		setTitle("Add Member");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
