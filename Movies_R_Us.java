@@ -282,6 +282,11 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 			new MovieDialog(this);
 		}
 		
+		else if(command.equals("ADD_GAME"))
+		{
+			new GameDialog(this);
+		}
+		
 		else if(command.equals("ADD_MEMBER"))
 		{
 			new MemberDialog(this);
@@ -332,10 +337,7 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 			if(command.equals("SEARCH"))
 			{
 				search();
-				titlesDisplayed = true;
 			}
-			
-			else titlesDisplayed = false;
 		
 			if(command.equals("VIEW_SEQUELS"))
 				viewSequels();
@@ -352,28 +354,34 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 			else if(command.equals("POPULAR_TITLES"))
 				popularTitles();
 			
-			else if(command.equals("CURRENT_RENTALS"))
-			{
-				currentRentals();
-				rentalsDisplayed = true;
-			}
-			
-			else rentalsDisplayed = false;
-			
-			if(command.equals("VIEW_MEMBERS"))
-			{
-				viewMembers();
-				membersDisplayed = true;
-			}
-			
-			else membersDisplayed = false;
-			
-			if(command.equals("LOGOUT"))
+			else if(command.equals("LOGOUT"))
 			{
 				connection.close();
 				resultSet.close();
 				System.exit(0);
 			}
+			
+			else if(command.equals("DELETE"))
+				delete();
+			
+			else if(command.equals("CURRENT_RENTALS"))
+			{
+				currentRentals();
+			}
+			
+			else if(command.equals("RETURN"))
+			{
+				markReturned();
+			}
+				
+			else if(command.equals("VIEW_MEMBERS"))
+			{
+				viewMembers();
+			}
+			
+			rentalsDisplayed = (rentalsDisplayed && command.equals("DELETE")) || command.equals("CURRENT_RENTALS");
+			membersDisplayed = (membersDisplayed && command.equals("DELETE")) || command.equals("VIEW_MEMBERS");
+			titlesDisplayed = (titlesDisplayed && command.equals("DELETE")) || command.equals("SEARCH");
 		}
 		
 		catch(SQLException s)
@@ -533,7 +541,7 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 	void currentRentals() throws SQLException
 	{
 		PreparedStatement pStatement;
-		pStatement = connection.prepareStatement("SELECT T.tid AS 'Title ID', T.title AS 'Title', M.email AS 'Member e-mail', A.street AS 'Shipping Address', A.city AS 'City', A.state AS 'State', A.zip AS 'Zip' "
+		pStatement = connection.prepareStatement("SELECT R.rid as 'Rental ID', T.tid AS 'Title ID', T.title AS 'Title', M.email AS 'Member e-mail', A.street AS 'Shipping Address', A.city AS 'City', A.state AS 'State', A.zip AS 'Zip' "
 									+ "FROM Titles T, Members M, Addresses A, Rentals R "
 									+ "WHERE T.tid = R.tid "
 									+ "AND R.email = M.email "
@@ -551,6 +559,41 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 										   + "FROM Members ");
 										   
 		buildTableModel(pStatement);
+	}
+	
+	void delete() throws SQLException
+	{
+		PreparedStatement pStatement;
+		
+		if(titlesDisplayed)
+		{
+			pStatement = connection.prepareStatement("DELETE FROM Titles "
+											   + "WHERE tid = ? ");
+			pStatement.setInt(1, (Integer) (resultTable.getValueAt(resultTable.getSelectedRow(), 0)));
+			pStatement.executeUpdate();
+			search();
+		}
+		
+		else if(membersDisplayed)
+		{
+			pStatement = connection.prepareStatement("DELETE FROM Members "
+											   + "WHERE email = ? ");
+			pStatement.setString(1, resultTable.getValueAt(resultTable.getSelectedRow(), 0).toString());
+			pStatement.executeUpdate();
+			viewMembers();
+		}
+	}
+	
+	void markReturned() throws SQLException
+	{
+		PreparedStatement pStatement;
+		
+		pStatement = connection.prepareStatement("UPDATE Rentals "
+											+ "SET returned = 1 "
+											+ "WHERE rid = ? ");
+		pStatement.setInt(1, (Integer) (resultTable.getValueAt(resultTable.getSelectedRow(), 0)));
+		pStatement.executeUpdate();
+		currentRentals();
 	}
 	
 	void buildTableModel(PreparedStatement pStatement) throws SQLException
@@ -782,10 +825,18 @@ class Movies_R_Us_Frame extends JFrame implements ActionListener, ListSelectionL
 			pStatement.setInt(1, actorId);
 			pStatement.setInt(2, maxTid);
 			pStatement.executeUpdate();
+			
+			if(sequelID != -1)
+			{
+				pStatement = connection.prepareStatement("INSERT INTO Sequel_To VALUES(?,?) ");
+				pStatement.setInt(1, maxTid);
+				pStatement.setInt(2, sequelID);
+				pStatement.executeUpdate();
+			}
 		}
 	} //this method is a goddamn mess. Come back later
 	
-	public void addGame(String title, String releaseDate, String platform, int version, String genre, int numCopies) throws SQLException
+	public void addGame(String title, String releaseDate, String platform, String version, String genre, int numCopies) throws SQLException
 	{
 		PreparedStatement pStatement;
 		int maxTid;
